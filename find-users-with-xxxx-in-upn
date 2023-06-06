@@ -1,8 +1,10 @@
+##find-users-with-xxxx-in-upn
+
 # Connect to Azure AD
 Connect-AzureAD
 
 # Define the search parameters
-$keyword = "xxxx"
+$keyword = "ian"
 
 # Get all users matching the UPN criteria
 $users = Get-AzureADUser -Filter "startswith(UserPrincipalName, '$keyword')"
@@ -12,7 +14,7 @@ $userList = @()
 
 # Iterate through each user and add their display name to the list
 foreach ($user in $users) {
-    $userList += $user.DisplayName
+    $userList += $user.UserPrincipalName
 }
 
 # Display the list of users
