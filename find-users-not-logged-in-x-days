@@ -6,7 +6,7 @@ $keyword = "jsac"
 $daysSinceLastLogin = 90
 
 # Get all users matching the name criteria
-$users = Get-AzureADUser -Filter "startswith(DisplayName, '$keyword') -or startswith(UserPrincipalName, '$keyword')"
+$users = Get-AzureADUser -All $True -Filter "startswith(DisplayName, '$keyword') -or startswith(UserPrincipalName, '$keyword')"
 
 # Get the current date
 $currentDate = Get-Date
