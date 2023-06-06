@@ -1,0 +1,29 @@
+# Connect to Azure AD
+Connect-AzureAD
+
+# Define the search parameters
+$keyword = "jsac"
+$daysSinceLastLogin = 90
+
+# Get all users matching the name criteria
+$users = Get-AzureADUser -Filter "startswith(DisplayName, '$keyword') -or startswith(UserPrincipalName, '$keyword')"
+
+# Get the current date
+$currentDate = Get-Date
+
+# Iterate through each user to check their last login date
+foreach ($user in $users) {
+    $userPrincipalName = $user.UserPrincipalName
+    $lastSignInDateTime = Get-AzureADAuditSignInLogs -Top 1 -Filter "UserPrincipalName eq '$userPrincipalName'" | Select-Object -ExpandProperty CreatedDateTime
+
+    # Calculate the days since last login
+    $daysSinceLastSignIn = ($currentDate - $lastSignInDateTime).Days
+
+    # Check if the user has not logged in for the specified number of days
+    if ($daysSinceLastSignIn -ge $daysSinceLastLogin) {
+        Write-Host "User $($user.DisplayName) with UserPrincipalName $($user.UserPrincipalName) has not logged in for $daysSinceLastSignIn days."
+    }
+}
+
+# Disconnect from Azure AD
+Disconnect-AzureAD
