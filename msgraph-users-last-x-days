@@ -1,5 +1,5 @@
 # Install MS Graph module
-Install-Module -Name Microsoft.Graph
+Install-Module -Name Microsoft.Graph -f 
 
 # Import MS Graph module
 Import-Module -Name Microsoft.Graph
@@ -8,7 +8,7 @@ Import-Module -Name Microsoft.Graph
 $clientId = "YOUR_CLIENT_ID"
 $tenantId = "YOUR_TENANT_ID"
 $clientSecret = "YOUR_CLIENT_SECRET"
-$searchString = "XXX"
+$searchString = "ian"
 $daysThreshold = 90
 
 # Connect to MS Graph API
@@ -34,4 +34,3 @@ foreach ($user in $users) {
 }
 
 # Disconnect from MS Graph API
-Disconnect-MgGraph
