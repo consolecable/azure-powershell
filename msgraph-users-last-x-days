@@ -1,0 +1,37 @@
+# Install MS Graph module
+Install-Module -Name Microsoft.Graph
+
+# Import MS Graph module
+Import-Module -Name Microsoft.Graph
+
+# Set variables
+$clientId = "YOUR_CLIENT_ID"
+$tenantId = "YOUR_TENANT_ID"
+$clientSecret = "YOUR_CLIENT_SECRET"
+$searchString = "XXX"
+$daysThreshold = 90
+
+# Connect to MS Graph API
+Connect-MgGraph -ClientId $clientId -TenantId $tenantId -ClientSecret $clientSecret
+
+# Get current date
+$currentDate = Get-Date
+
+# Calculate the threshold date
+$thresholdDate = $currentDate.AddDays(-$daysThreshold)
+
+# Define the filter query
+$filterQuery = "startswith(userPrincipalName, '$searchString') and lastSignInDateTime le $thresholdDate"
+
+# Get users matching the filter query
+$users = Get-MgUser -Filter $filterQuery
+
+# Loop through each user
+foreach ($user in $users) {
+    Write-Host "User: $($user.UserPrincipalName)"
+    Write-Host "Last Sign-in Time: $($user.LastSignInDateTime)"
+    Write-Host "------------------------"
+}
+
+# Disconnect from MS Graph API
+Disconnect-MgGraph
