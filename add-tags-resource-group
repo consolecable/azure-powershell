@@ -1,4 +1,5 @@
 $resourceGroupName = "YourResourceGroupName"
+$SubscrptionID = "123123"
 
 # Define the tags
 $tags = @{
@@ -12,4 +13,4 @@ $tags = @{
 }
 
 # Set the tags for the resource group
-Set-AzTag -ResourceId "/subscriptions/<subscription-id>/resourceGroups/$resourceGroupName" -Tag $tags
+Set-AzTag -ResourceId "/subscriptions/$SubscriptionID/resourceGroups/$resourceGroupName" -Tag $tags
