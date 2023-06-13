@@ -1,0 +1,25 @@
+$certName = "YourCertificateName"
+$commonName = "YourCommonName"
+$country = "YourCountryCode"
+$state = "YourState"
+$locality = "YourLocality"
+$organization = "YourOrganization"
+$organizationalUnit = "YourOrganizationalUnit"
+$emailAddress = "YourEmailAddress"
+$outputPath = "YourOutputPath\csr.txt"
+
+# Create a new certificate request
+$certRequest = New-Object System.Security.Cryptography.X509Certificates.CertificateRequest -ArgumentList (
+    "CN=$commonName, C=$country, S=$state, L=$locality, O=$organization, OU=$organizationalUnit, E=$emailAddress",
+    $null,
+    [System.Security.Cryptography.HashAlgorithmName]::Sha256
+)
+
+# Generate a new private key
+$certRequest.GenerateKey([System.Security.Cryptography.RSAParameters]::new(2048))
+
+# Export the CSR to a file
+$csrData = $certRequest.CreateSigningRequest()
+[System.IO.File]::WriteAllText($outputPath, $csrData)
+
+Write-Host "CSR file created at: $outputPath"
