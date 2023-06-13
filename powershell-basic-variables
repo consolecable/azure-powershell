@@ -1,0 +1,5 @@
+$azsubscription="SubscriptionName"
+
+Select-AzSubscription "$azsubscription"
+
+
