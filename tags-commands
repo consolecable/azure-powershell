@@ -1,0 +1,9 @@
+#get tags
+
+$resourceGroupName = "testresourcegroup3"
+
+$resourceGroup = Get-AzResourceGroup -Name $resourceGroupName
+$tags = $resourceGroup.Tags
+
+$tags
+
