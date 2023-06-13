@@ -1,5 +1,5 @@
 $resourceGroupName = "YourResourceGroupName"
-$SubscrptionID = "123123"
+$SubscriptionID = "123123"
 
 # Define the tags
 $tags = @{
