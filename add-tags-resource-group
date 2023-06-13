@@ -1,0 +1,15 @@
+$resourceGroupName = "YourResourceGroupName"
+
+# Define the tags
+$tags = @{
+    "Tag1" = "Value1"
+    "Tag2" = "Value2"
+    "Tag3" = "Value3"
+    "Tag4" = "Value4"
+    "Tag5" = "Value5"
+    "Tag6" = "Value6"
+    "Tag7" = "Value7"
+}
+
+# Set the tags for the resource group
+Set-AzTag -ResourceId "/subscriptions/<subscription-id>/resourceGroups/$resourceGroupName" -Tag $tags
