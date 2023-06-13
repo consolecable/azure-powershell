@@ -1,0 +1,18 @@
+$subscriptionId = "subid"
+$resourceGroupName = "resourcegroupname"
+$location = "West Europe"
+$tags = @{
+    "Tag1" = "Value1"
+    "Tag2" = "Value2"
+    "Tag3" = "Value3"
+    "Tag4" = "Value4"
+    "Tag5" = "Value5"
+    "Tag6" = "Value6"
+    "Tag7" = "Value7"
+    "Tag8" = "Value8"
+}
+
+Connect-AzAccount -SubscriptionId $subscriptionId
+
+New-AzResourceGroup -Name $resourceGroupName -Location $location -Tag $tags
+
