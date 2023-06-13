@@ -1,0 +1,45 @@
+resourceGroupName = "YourResourceGroupName"
+$solutionName = "start-stop-vm-during-offhours-v2"
+$location = "YourLocation"
+$vmScheduleName = "YourVmScheduleName"
+$offHourTimezone = "YourOffHourTimezone"  # e.g., "UTC"
+$onHourTimezone = "YourOnHourTimezone"  # e.g., "UTC"
+$emailNotification = "YourEmailNotification"  # e.g., "noreply@example.com"
+$emailSendTo = "YourEmailSendTo"  # e.g., "admin@example.com"
+
+# Create resource group if it doesn't exist
+if (!(Get-AzResourceGroup -Name $resourceGroupName -ErrorAction SilentlyContinue)) {
+    New-AzResourceGroup -Name $resourceGroupName -Location $location
+}
+
+# Deploy the solution from the Azure Marketplace
+New-AzMarketplaceDeletionRetentionPlan -Location $location
+$deployment = New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName `
+    -TemplateUri "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/solutions/start-stop-vm-during-offhours-v2/azuredeploy.json" `
+    -solutionName $solutionName `
+    -vmScheduleName $vmScheduleName `
+    -offHourTimezone $offHourTimezone `
+    -onHourTimezone $onHourTimezone `
+    -emailNotification $emailNotification `
+    -emailSendTo $emailSendTo
+
+if ($deployment.ProvisioningState -eq "Succeeded") {
+    Write-Host "Solution deployment succeeded."
+} else {
+    Write-Host "Solution deployment failed. Error message: $($deployment.Error.Message)"
+}
+
+Make the following changes to the script:
+
+    Replace "YourResourceGroupName" with the desired name for the resource group where the solution will be deployed.
+    Replace "YourLocation" with the Azure region or location where you want to deploy the solution.
+    Replace "YourVmScheduleName" with the name for the VM schedule you want to create.
+    Replace "YourOffHourTimezone" and "YourOnHourTimezone" with the desired timezones for off-hours and on-hours, respectively.
+    Replace "YourEmailNotification" with the email address for receiving notifications.
+    Replace "YourEmailSendTo" with the email address to which notifications will be sent.
+
+The script checks if the resource group exists and creates it if it doesn't exist. It then deploys the "Start/Stop VMs during off hours - V2" solution using the template from the Azure Quickstart Templates GitHub repository.
+
+After running the script, it will provide the status of the deployment and indicate whether it succeeded or failed.
+
+Ensure you have the Azure PowerShell module installed and authenticated with the appropriate Azure account before running the script.
