@@ -1,0 +1,21 @@
+# Connect to Azure (replace with your authentication method)
+Connect-AzAccount
+
+# Set the resource details
+$resourceGroupName = "YourResourceGroupName"
+$resourceName = "YourResourceName"
+$resourceType = "YourResourceType"
+
+# Define the tags
+$tags = @{
+    "Tag1" = "Value1"
+    "Tag2" = "Value2"
+    "Tag3" = "Value3"
+    "Tag4" = "Value4"
+    "Tag5" = "Value5"
+    "Tag6" = "Value6"
+    "Tag7" = "Value7"
+}
+
+# Add the tags to the resource
+Set-AzResource -ResourceGroupName $resourceGroupName -Name $resourceName -ResourceType $resourceType -Tag $tags
