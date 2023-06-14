@@ -1,0 +1,20 @@
+# Connect to Azure
+Connect-AzAccount
+
+# Get cost data for the last 30 days
+$startDate = (Get-Date).AddDays(-30)
+$endDate = Get-Date
+$costs = Get-AzConsumptionUsageDetail -StartDate $startDate -EndDate $endDate | `
+    Where-Object { $_.MeterCategory -eq "Usage" } | `
+    Group-Object -Property { $_.InstanceId }
+
+# Review costs per resource
+foreach ($cost in $costs) {
+    $resourceId = $cost.Group[0].InstanceId
+    $resourceName = (Get-AzResource -ResourceId $resourceId).Name
+    $totalCost = ($cost.Group | Measure-Object -Property Cost -Sum).Sum
+
+    Write-Host "Resource: $resourceName"
+    Write-Host "Total Cost: $totalCost"
+    Write-Host
+}
