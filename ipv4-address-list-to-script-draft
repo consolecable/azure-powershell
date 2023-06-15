@@ -1,1 +1,41 @@
+# Set the path to the input text file
+$inputFilePath = "C:\Path\To\InputFile.txt"
 
+# Set the path to the output text file
+$outputFilePath = "C:\Path\To\OutputFile.txt"
+
+# Set the variable placeholder in the sample text
+$variablePlaceholder = "<IP_ADDRESS>"
+
+# Read the input file and retrieve the list of IP addresses
+$ipAddresses = Get-Content -Path $inputFilePath
+
+# Create an empty array to store the processed text blocks
+$textBlocks = @()
+
+# Iterate through each IP address
+foreach ($ipAddress in $ipAddresses) {
+    # Determine if the IP address is IPv4 or IPv6 compatible
+    $isIPv4 = [System.Net.IPAddress]::TryParse($ipAddress, [ref]$null)
+    $isIPv6 = $ipAddress -match "^(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}$"
+
+    # Verify if the IP address is valid
+    if ($isIPv4 -or $isIPv6) {
+        # Replace the variable placeholder with the current IP address
+        $textBlock = "ip address $ipAddress" -replace $variablePlaceholder, $ipAddress
+
+        # Add the processed text block to the array
+        $textBlocks += $textBlock
+    }
+    else {
+        Write-Warning "Invalid IP address: $ipAddress"
+    }
+}
+
+# Join the text blocks into a single string with line breaks
+$outputText = $textBlocks -join "`r`n"
+
+# Write the output text to the output file
+$outputText | Out-File -FilePath $outputFilePath -Encoding UTF8
+
+Write-Host "Text generation complete. Output file: $outputFilePath"
