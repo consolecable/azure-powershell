@@ -1,0 +1,53 @@
+Certainly! Here's an updated version of the script that includes variables at the top for tenancy and subscription. Replace the `<TenancyId>` and `<SubscriptionId>` placeholders with your actual values:
+
+```powershell
+# Install Azure PowerShell module (if not already installed)
+# Install-Module -Name Az -AllowClobber -Scope CurrentUser
+
+# Import the Azure PowerShell module
+Import-Module Az
+
+# Set variables for tenancy and subscription
+$tenancyId = "<TenancyId>"
+$subscriptionId = "<SubscriptionId>"
+
+# Authenticate to Azure (if not already authenticated)
+# Connect-AzAccount
+
+# Set the tenancy
+# Set-AzTenant -TenantId $tenancyId
+
+# Set the subscription
+# Set-AzContext -SubscriptionId $subscriptionId
+
+# Fetch all virtual machines
+$vms = Get-AzVM
+
+# Create an empty array to store VM details
+$vmDetails = @()
+
+# Iterate through each virtual machine
+foreach ($vm in $vms) {
+    # Retrieve resource group and tags
+    $resourceGroup = $vm.ResourceGroupName
+    $tags = $vm.Tags
+
+    # Create a custom object with VM details
+    $vmObject = [PSCustomObject]@{
+        Name = $vm.Name
+        ResourceGroup = $resourceGroup
+        Tags = $tags
+        # Add more properties as needed (e.g., VM size, location, etc.)
+    }
+
+    # Add the VM object to the array
+    $vmDetails += $vmObject
+}
+
+# Export VM details to a CSV file
+$vmDetails | Export-Csv -Path "VM_Details.csv" -NoTypeInformation
+```
+
+In this version, the script includes two variables, `$tenancyId` and `$subscriptionId`, which you can set at the top of the script. Uncomment and update the authentication and subscription-related commands accordingly.
+
+By setting the tenancy and subscription variables, the script ensures that the correct tenancy and subscription are used when fetching the virtual machines. This is helpful when you have multiple tenancies or subscriptions associated with your Azure account.
