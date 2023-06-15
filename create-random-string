@@ -1,0 +1,44 @@
+# Define parameters
+$length = 10
+$useUppercase = $true
+$useLowercase = $true
+$useNumbers = $true
+$useSpecialCharacters = $true
+
+# Define character sets
+$uppercaseChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+$lowercaseChars = "abcdefghijklmnopqrstuvwxyz"
+$numberChars = "0123456789"
+$specialChars = "!@#$%^&*()_+-"
+
+# Initialize the final character set
+$charSet = ""
+
+# Add character sets based on user preferences
+if ($useUppercase) {
+    $charSet += $uppercaseChars
+}
+
+if ($useLowercase) {
+    $charSet += $lowercaseChars
+}
+
+if ($useNumbers) {
+    $charSet += $numberChars
+}
+
+if ($useSpecialCharacters) {
+    $charSet += $specialChars
+}
+
+# Generate random string
+$randomString = ""
+$random = New-Object System.Random
+
+for ($i = 0; $i -lt $length; $i++) {
+    $randomIndex = $random.Next(0, $charSet.Length)
+    $randomChar = $charSet[$randomIndex]
+    $randomString += $randomChar
+}
+
+Write-Host "Random String: $randomString"
