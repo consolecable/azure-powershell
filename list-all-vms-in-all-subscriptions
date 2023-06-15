@@ -1,0 +1,73 @@
+# Install Azure PowerShell module if not already installed
+# Uncomment the following line if you need to install the module
+# Install-Module -Name Az
+
+# Connect to Azure account
+Connect-AzAccount
+
+# List all available subscriptions
+$subscriptions = Get-AzSubscription
+
+# Create an empty array to store VM information
+$vmInfoArray = @()
+
+# Iterate through each subscription
+foreach ($subscription in $subscriptions) {
+    # Set the current subscription context
+    Set-AzContext -SubscriptionId $subscription.Id
+    
+    # Get all VMs in the current subscription
+    $vms = Get-AzVM
+    
+    # Iterate through each VM
+    foreach ($vm in $vms) {
+        # Check if the VM has network interfaces
+        if ($vm.NetworkProfile.NetworkInterfaces -ne $null) {
+            # Check if the VM has at least one network interface
+            if ($vm.NetworkProfile.NetworkInterfaces.Length -gt 0) {
+                # Get the public IP if available, or set it to "N/A"
+                $publicIP = "N/A"
+                if ($vm.NetworkProfile.NetworkInterfaces[0].IpConfigurations) {
+                    $ipConfig = $vm.NetworkProfile.NetworkInterfaces[0].IpConfigurations[0]
+                    if ($ipConfig.PublicIPAddress) {
+                        $publicIP = $ipConfig.PublicIPAddress.Id.Split('/')[-1]
+                    }
+                }
+                
+                # Create an object to store VM information
+                $vmInfo = [PSCustomObject] @{
+                    'Subscription Name'   = $subscription.Name
+                    'Subscription ID'     = $subscription.Id
+                    'VM Name'             = $vm.Name
+                    'Resource Group'      = $vm.ResourceGroupName
+                    'Location'            = $vm.Location
+                    'VM Size'             = $vm.HardwareProfile.VmSize
+                    'OS Type'             = $vm.StorageProfile.OsDisk.OsType
+                    'OS Disk Size (GB)'   = $vm.StorageProfile.OsDisk.DiskSizeGB
+                    'Public IP'           = $publicIP
+                }
+                
+                # Add the VM information to the array
+                $vmInfoArray += $vmInfo
+            }
+        }
+    }
+}
+
+# Generate dynamic file name with timestamp and tenant name
+$timestamp = Get-Date -Format "yyMMddHHmm"
+$tenantId = (Get-AzContext).Tenant.TenantId
+$tenantName = "tenant" + $tenantId.Substring($tenantId.Length - 4)
+$csvFileName = "VMInfo_$timestamp_$tenantName.csv"
+$csvPath = Join-Path -Path ".\" -ChildPath $csvFileName
+
+# Export VM information to CSV
+$vmInfoArray | Export-Csv -Path $csvPath -NoTypeInformation
+
+Write-Host "VM information exported to $csvPath"
+
+# Read the CSV file
+$csvData = Import-Csv -Path $csvPath
+
+# Display the CSV data
+$csvData
