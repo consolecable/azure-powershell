@@ -1,0 +1,38 @@
+# Set variables
+$resourceGroupName = "YourResourceGroupName"
+$storageAccountName = "YourStorageAccountName"
+$subnetName = "YourSubnetName"
+$vnetName = "YourVNetName"
+
+# Create resource group if it doesn't exist
+$resourceGroup = Get-AzResourceGroup -Name $resourceGroupName -ErrorAction SilentlyContinue
+if (-not $resourceGroup) {
+    New-AzResourceGroup -Name $resourceGroupName -Location "YourLocation"
+}
+
+# Create storage account
+$storageAccount = New-AzStorageAccount -ResourceGroupName $resourceGroupName -Name $storageAccountName -SkuName Standard_GZRS -Location "YourLocation" -Kind StorageV2 -EnableHttpsTrafficOnly $true
+
+# Get the VNet
+$vnet = Get-AzVirtualNetwork -Name $vnetName -ResourceGroupName $resourceGroupName
+
+# Get the subnet
+$subnet = Get-AzVirtualNetworkSubnetConfig -VirtualNetwork $vnet -Name $subnetName
+
+# Create private endpoint
+$privateEndpointName = "PrivateEndpoint1"
+$privateEndpoint = New-AzPrivateEndpoint -Name $privateEndpointName -ResourceGroupName $resourceGroupName -Location "YourLocation" -SubnetId $subnet.Id -PrivateLinkServiceId $storageAccount.Id -PrivateLinkServiceConnectionName $privateEndpointName -GroupIds "blob", "queue", "table", "file"
+
+# Create private DNS zone
+$privateDnsZoneName = "privatelink.blob.core.windows.net"
+$privateDnsZone = New-AzPrivateDnsZone -Name $privateDnsZoneName -ResourceGroupName $resourceGroupName -ZoneType Private
+
+# Create virtual network link
+$virtualNetworkLinkName = "VirtualNetworkLink1"
+Add-AzPrivateDnsVirtualNetworkLink -ZoneName $privateDnsZoneName -ResourceGroupName $resourceGroupName -Name $virtualNetworkLinkName -VirtualNetworkId $vnet.Id -EnableRegistration
+
+# Enable private endpoint connection
+Set-AzPrivateEndpointConnection -Name $privateEndpointName -ResourceGroupName $resourceGroupName -PrivateEndpoint $privateEndpoint -ApprovalMessage "Auto-approval" -PrivateLinkServiceConnectionState Approved
+
+# Output private endpoint information
+$privateEndpoint
