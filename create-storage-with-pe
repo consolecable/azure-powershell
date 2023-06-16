@@ -3,6 +3,8 @@ $resourceGroupName = "YourResourceGroupName"
 $storageAccountName = "YourStorageAccountName"
 $subnetName = "YourSubnetName"
 $vnetName = "YourVNetName"
+$vnetAddressPrefix = "10.0.0.0/16"
+$subnetAddressPrefix = "10.0.0.0/24"
 
 # Create resource group if it doesn't exist
 $resourceGroup = Get-AzResourceGroup -Name $resourceGroupName -ErrorAction SilentlyContinue
@@ -10,14 +12,21 @@ if (-not $resourceGroup) {
     New-AzResourceGroup -Name $resourceGroupName -Location "YourLocation"
 }
 
+# Create or get the VNet
+$vnet = Get-AzVirtualNetwork -Name $vnetName -ResourceGroupName $resourceGroupName -ErrorAction SilentlyContinue
+if (-not $vnet) {
+    $vnet = New-AzVirtualNetwork -ResourceGroupName $resourceGroupName -Name $vnetName -AddressPrefix $vnetAddressPrefix -Location "YourLocation"
+}
+
+# Create or get the subnet
+$subnet = Get-AzVirtualNetworkSubnetConfig -VirtualNetwork $vnet -Name $subnetName -ErrorAction SilentlyContinue
+if (-not $subnet) {
+    $subnet = Add-AzVirtualNetworkSubnetConfig -Name $subnetName -VirtualNetwork $vnet -AddressPrefix $subnetAddressPrefix
+    Set-AzVirtualNetwork -VirtualNetwork $vnet
+}
+
 # Create storage account
 $storageAccount = New-AzStorageAccount -ResourceGroupName $resourceGroupName -Name $storageAccountName -SkuName Standard_GZRS -Location "YourLocation" -Kind StorageV2 -EnableHttpsTrafficOnly $true
-
-# Get the VNet
-$vnet = Get-AzVirtualNetwork -Name $vnetName -ResourceGroupName $resourceGroupName
-
-# Get the subnet
-$subnet = Get-AzVirtualNetworkSubnetConfig -VirtualNetwork $vnet -Name $subnetName
 
 # Create private endpoint
 $privateEndpointName = "PrivateEndpoint1"
