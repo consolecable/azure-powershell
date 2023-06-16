@@ -1,10 +1,14 @@
 # Set variables
+$subscriptionId = "YourSubscriptionId"
 $resourceGroupName = "YourResourceGroupName"
 $storageAccountName = "YourStorageAccountName"
 $subnetName = "YourSubnetName"
 $vnetName = "YourVNetName"
 $vnetAddressPrefix = "10.0.0.0/16"
 $subnetAddressPrefix = "10.0.0.0/24"
+
+# Select Azure subscription
+select-azsubscription -SubscriptionId $subscriptionId
 
 # Create resource group if it doesn't exist
 $resourceGroup = Get-AzResourceGroup -Name $resourceGroupName -ErrorAction SilentlyContinue
@@ -38,10 +42,4 @@ $privateDnsZone = New-AzPrivateDnsZone -Name $privateDnsZoneName -ResourceGroupN
 
 # Create virtual network link
 $virtualNetworkLinkName = "VirtualNetworkLink1"
-Add-AzPrivateDnsVirtualNetworkLink -ZoneName $privateDnsZoneName -ResourceGroupName $resourceGroupName -Name $virtualNetworkLinkName -VirtualNetworkId $vnet.Id -EnableRegistration
-
-# Enable private endpoint connection
-Set-AzPrivateEndpointConnection -Name $privateEndpointName -ResourceGroupName $resourceGroupName -PrivateEndpoint $privateEndpoint -ApprovalMessage "Auto-approval" -PrivateLinkServiceConnectionState Approved
-
-# Output private endpoint information
-$privateEndpoint
+Add-AzPrivateDnsVirtualNetworkLink -ZoneName $privateDnsZoneName -ResourceGroupName $resourceGroupName -Name $virtual
