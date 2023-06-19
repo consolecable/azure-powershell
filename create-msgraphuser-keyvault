@@ -1,0 +1,65 @@
+# Set variables
+$resourceGroupName = "YourResourceGroupName"
+$location = "YourLocation"
+$keyVaultName = "YourKeyVaultName"
+$secretName = "YourSecretName"
+
+# Install required modules if not already installed
+$requiredModules = @("Az.Accounts", "Az.KeyVault", "AzureAD")
+$installedModules = Get-Module -ListAvailable | Select-Object -ExpandProperty Name
+
+foreach ($module in $requiredModules) {
+    if ($module -notin $installedModules) {
+        Install-Module -Name $module -Force
+    }
+}
+
+# Connect to Azure account
+Connect-AzAccount
+
+# Check if the resource group exists, and create it if it doesn't
+$resourceGroup = Get-AzResourceGroup -Name $resourceGroupName -ErrorAction SilentlyContinue
+
+if (-not $resourceGroup) {
+    New-AzResourceGroup -Name $resourceGroupName -Location $location
+    Write-Host "Created resource group: $resourceGroupName"
+} else {
+    Write-Host "Resource group $resourceGroupName already exists"
+}
+
+# Check if the Key Vault exists, and create it if it doesn't
+$keyVault = Get-AzKeyVault -VaultName $keyVaultName -ErrorAction SilentlyContinue
+
+if (-not $keyVault) {
+    $keyVault = New-AzKeyVault -VaultName $keyVaultName -ResourceGroupName $resourceGroupName -Location $location -Sku "Standard" -EnableSoftDelete -EnablePurgeProtection
+    Write-Host "Created Key Vault: $keyVaultName"
+} else {
+    Write-Host "Key Vault $keyVaultName already exists"
+}
+
+# Get the current user's UPN and display name
+$currentUser = Get-AzContext
+$currentUserUPN = $currentUser.Account.Id
+$currentUserDisplayName = $currentUser.Account.Name
+
+# Create a new user and secret for MS Graph
+$msGraphUser = New-AzADUser -DisplayName $currentUserDisplayName -UserPrincipalName $currentUserUPN
+$msGraphSecret = New-AzADAppCredential -ObjectId $msGraphUser.Id -CertExpiryDate $([DateTime]::UtcNow.AddYears(1))
+
+# Store the credentials in Key Vault
+$secretValue = ConvertTo-SecureString -String $msGraphSecret.Secret -AsPlainText -Force
+Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $secretName -SecretValue $secretValue
+
+Write-Host "Created MS Graph user: $($msGraphUser.DisplayName) ($($msGraphUser.UserPrincipalName))"
+Write-Host "Stored credentials in Key Vault: $keyVaultName"
+
+# Test the credentials
+$credentials = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $secretName
+$clientId = $msGraphUser.AppId
+$clientSecret = $credentials.SecretValue | ConvertFrom-SecureString -AsPlainText
+
+Connect-AzureAD -TenantId $msGraphUser.TenantId -ClientId $clientId -CertificateThumbprint $clientSecret
+
+# Retrieve the signed-in user's information as a test
+$me = Get-AzureADUser -Top 1
+Write-Host "Signed-in User: $($me.DisplayName) ($($me.UserPrincipalName))"
