@@ -31,7 +31,7 @@ if (-not $resourceGroup) {
 $keyVault = Get-AzKeyVault -VaultName $keyVaultName -ErrorAction SilentlyContinue
 
 if (-not $keyVault) {
-    $keyVault = New-AzKeyVault -VaultName $keyVaultName -ResourceGroupName $resourceGroupName -Location $location -Sku "Standard" -EnableSoftDelete -EnablePurgeProtection
+    $keyVault = New-AzKeyVault -VaultName $keyVaultName -ResourceGroupName $resourceGroupName -Location $location -Sku "Standard" -EnablePurgeProtection
     Write-Host "Created Key Vault: $keyVaultName"
 } else {
     Write-Host "Key Vault $keyVaultName already exists"
