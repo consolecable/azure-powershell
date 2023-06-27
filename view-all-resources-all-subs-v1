@@ -1,0 +1,49 @@
+# Install Azure PowerShell module if not already installed
+if (-not (Get-Module -ListAvailable -Name Az)) {
+    Install-Module -Name Az -AllowClobber -Scope CurrentUser
+}
+
+# Connect to Azure account
+Connect-AzAccount
+
+# Get all Azure subscriptions
+$subscriptions = Get-AzSubscription
+
+# Create an empty array to store resource information
+$resources = @()
+
+# Iterate through each subscription
+foreach ($subscription in $subscriptions) {
+    Write-Output "Processing subscription: $($subscription.Name)"
+    
+    # Set the current subscription context
+    Set-AzContext -SubscriptionId $subscription.Id
+    
+    # Get all resources in the subscription
+    $subscriptionResources = Get-AzResource
+    
+    # Add resources to the array
+    $resources += $subscriptionResources
+}
+
+# Generate report
+$report = $resources | Select-Object -Property ResourceType, ResourceName, ResourceGroupName, SubscriptionName
+
+# Output report to CSV file
+$report | Export-Csv -Path "ResourcesReport.csv" -NoTypeInformation
+
+# Generate summary
+$summary = $resources | Group-Object -Property ResourceType | Select-Object Name, Count
+
+# Calculate total count of all resources
+$totalCount = $resources.Count
+
+# Output summary
+Write-Output "`n--- Summary ---"
+Write-Output "Total number of resources: $totalCount"
+Write-Output "`nResource counts by type:"
+$summary | ForEach-Object {
+    Write-Output "$($_.Name): $($_.Count)"
+}
+
+Write-Output "`nResource report and summary generated successfully."
