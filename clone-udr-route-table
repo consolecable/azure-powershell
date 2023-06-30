@@ -1,0 +1,37 @@
+# Specify the name of the existing UDR to clone
+$existingUdrName = "udr01"
+
+# Specify the name for the cloned UDR
+$clonedUdrName = "clone-udr01"
+
+# Specify the resource group of the new UDR
+$newUdrResourceGroup = "testresourcegroup"
+
+# Specify the location of the new UDR
+$newUdrLocation = "North Europe"  # Replace with your desired location
+
+# Get the existing UDR configuration
+$existingUdr = Get-AzRouteTable | Where-Object {$_.Name -eq $existingUdrName}
+
+# Check if the existing UDR exists
+if ($existingUdr -eq $null) {
+    Write-Host "The existing UDR '$existingUdrName' does not exist."
+    return
+}
+
+# Create the cloned UDR in the specified resource group, subscription, and location
+$clonedUdr = New-AzRouteTable -Name $clonedUdrName -ResourceGroupName $newUdrResourceGroup -Location $newUdrLocation
+
+# Clone the routes from the existing UDR to the cloned UDR
+foreach ($route in $existingUdr.Routes) {
+    $routeName = $route.Name
+    $routeAddressPrefix = $route.AddressPrefix
+    $routeNextHopType = $route.NextHopType
+    $routeNextHopIpAddress = $route.NextHopIpAddress
+
+    Add-AzRouteConfig -RouteTable $clonedUdr -Name $routeName -AddressPrefix $routeAddressPrefix -NextHopType $routeNextHopType -NextHopIpAddress $routeNextHopIpAddress
+}
+
+
+Write-Host "Cloned UDR '$clonedUdrName' created successfully in resource group '$newUdrResourceGroup' and subscription '$newUdrSubscription' at location '$newUdrLocation'."
+
