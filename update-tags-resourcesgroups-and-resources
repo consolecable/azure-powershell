@@ -1,0 +1,28 @@
+$resourceGroups = @(
+    "ResourceGroup1",
+    "ResourceGroup2",
+    "ResourceGroup3"
+    # Add more resource group names here
+)
+
+$tags = @{
+    "Tag1" = "Value1"
+    "Tag2" = "Value2"
+    "Tag3" = "Value3"
+    # Add more tag key-value pairs here
+}
+
+foreach ($resourceGroup in $resourceGroups) {
+    $resources = Get-AzResource -ResourceGroupName $resourceGroup
+
+    foreach ($resource in $resources) {
+        $resourceTags = $resource.Tags
+        $updatedTags = $resourceTags.Clone()
+
+        foreach ($tagKey in $tags.Keys) {
+            $updatedTags[$tagKey] = $tags[$tagKey]
+        }
+
+        $resource | Set-AzResource -Tag $updatedTags -Force
+    }
+}
