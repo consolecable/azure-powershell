@@ -1,1 +1,34 @@
 
+$SubscriptionName = YourSubname
+
+
+Select-AzSubscription -Name $SubscriptionName 
+
+# Get a list of all resource groups
+$resourceGroups = Get-AzResourceGroup
+
+# Loop through each resource group
+foreach ($group in $resourceGroups) {
+    Write-Host "Processing Resource Group: $($group.ResourceGroupName)"
+
+    # Get all resources in the current resource group
+    $resources = Get-AzResource -ResourceGroupName $group.ResourceGroupName
+
+    # Loop through each resource in the resource group
+    foreach ($resource in $resources) {
+        Write-Host "Processing Resource: $($resource.Name)"
+
+        # Get the tags of the resource group
+        $groupTags = $group.Tags
+
+        # Update the tags of the resource with the tags of the resource group
+        $resource | Set-AzResource -Tag $groupTags -Force
+
+        Write-Host "Tags updated for Resource: $($resource.Name)"
+    }
+}
+
+Write-Host "All resources updated with tags from their resource groups."
+
+#
+
