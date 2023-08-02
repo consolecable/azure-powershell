@@ -1,0 +1,10 @@
+
+foreach ($vm in $vmList) {
+    $vmName = $vm.Name
+    $resourceGroup = $vm.ResourceGroupName
+
+    $disks = Get-AzVM -ResourceGroupName $resourceGroup -Name $vmName | Get-AzDisk
+
+    Write-Host "Attached disks for VM: $vmName in Resource Group: $resourceGroup"
+    $disks | Select-Object Name, DiskSizeGB, DiskState
+}
