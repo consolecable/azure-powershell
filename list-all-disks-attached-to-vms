@@ -1,3 +1,5 @@
+$resourceGroups = @("ResourceGroup1", "ResourceGroup2")
+$vmNames = @("VMName1", "VMName2", "VMName3")
 
 foreach ($vm in $vmList) {
     $vmName = $vm.Name
