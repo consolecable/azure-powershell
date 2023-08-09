@@ -1,0 +1,30 @@
+# Get a list of all storage accounts
+$storageAccounts = Get-AzStorageAccount
+
+# Initialize an array to store storage account information
+$report = @()
+
+# Iterate through each storage account
+foreach ($account in $storageAccounts) {
+    $accountName = $account.StorageAccountName
+    
+    # Get the used storage capacity for blobs, files, and tables
+    $usedBlobs = (Get-AzStorageUsage -ResourceType Blob -StorageAccountId $account.Id).UsedSpace
+    $usedFiles = (Get-AzStorageUsage -ResourceType File -StorageAccountId $account.Id).UsedSpace
+    $usedTables = (Get-AzStorageUsage -ResourceType Table -StorageAccountId $account.Id).UsedSpace
+    
+    # Calculate total used storage capacity
+    $totalUsed = $usedBlobs + $usedFiles + $usedTables
+
+    # Create a custom object for the report
+    $storageInfo = [PSCustomObject]@{
+        StorageAccountName = $accountName
+        UsedCapacityGB     = $totalUsed / 1GB  # Convert to GB
+    }
+
+    # Add the storage account info to the report array
+    $report += $storageInfo
+}
+
+# Display the report
+$report | Format-Table -AutoSize
