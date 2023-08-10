@@ -1,5 +1,5 @@
 #
-#
+# not working
 
 # Set the target subscription
 $SubscriptionName = "SubName"
