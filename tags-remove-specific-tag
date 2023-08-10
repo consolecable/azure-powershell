@@ -1,9 +1,14 @@
-
+#
+#
 
 # Set the target subscription
 $SubscriptionName = "SubName"
-Select-AzSubscription -SubscriptionName $SubscriptionName
 
+
+# List of tags to remove
+$tagsToRemove = @("tag1", "tag2", "tag3", "tag4")
+
+Select-AzSubscription -SubscriptionName $SubscriptionName
 
 # Get all resource groups in the subscription
 $resourceGroups = Get-AzResourceGroup
@@ -15,23 +20,36 @@ foreach ($resourceGroup in $resourceGroups) {
     $resources = Get-AzResource -ResourceGroupName $resourceGroup.ResourceGroupName
 
     foreach ($resource in $resources) {
-        Write-Host "Removing tag 'tag1' from resource $($resource.Name)"
+        Write-Host "Removing tags from resource $($resource.Name)"
 
-        # Remove the specified tag from the resource
-        $tags = $resource.Tags
-        if ($tags -and $tags.ContainsKey("tag1")) {
-            $tags.Remove("tag1")
-            $null = Set-AzResource -ResourceId $resource.ResourceId -Tag $tags -Force
+        # Get current tags of the resource
+        $currentTags = $resource.Tags
+
+        foreach ($tagToRemove in $tagsToRemove) {
+            if ($currentTags -and $currentTags.ContainsKey($tagToRemove)) {
+                $currentTags.Remove($tagToRemove)
+            }
+        }
+
+        # Update the tags of the resource if they were modified
+        if ($currentTags.Count -ne $resource.Tags.Count) {
+            $null = Set-AzResource -ResourceId $resource.ResourceId -Tag $currentTags -Force
         }
     }
 
-    # Remove the specified tag from the resource group
+    # Get current tags of the resource group
     $rgTags = $resourceGroup.Tags
-    if ($rgTags -and $rgTags.ContainsKey("tag1")) {
-        $rgTags.Remove("tag1")
+
+    foreach ($tagToRemove in $tagsToRemove) {
+        if ($rgTags -and $rgTags.ContainsKey($tagToRemove)) {
+            $rgTags.Remove($tagToRemove)
+        }
+    }
+
+    # Update the tags of the resource group if they were modified
+    if ($rgTags.Count -ne $resourceGroup.Tags.Count) {
         $null = Set-AzResourceGroup -ResourceGroupName $resourceGroup.ResourceGroupName -Tag $rgTags
     }
 }
 
-# Disconnect from Azure
-Disconnect-AzAccount
+#
