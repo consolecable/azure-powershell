@@ -1,0 +1,37 @@
+
+
+# Set the target subscription
+$SubscriptionName = "SubName"
+Select-AzSubscription -SubscriptionName $SubscriptionName
+
+
+# Get all resource groups in the subscription
+$resourceGroups = Get-AzResourceGroup
+
+foreach ($resourceGroup in $resourceGroups) {
+    Write-Host "Processing resource group $($resourceGroup.ResourceGroupName)"
+
+    # Get all resources in the resource group
+    $resources = Get-AzResource -ResourceGroupName $resourceGroup.ResourceGroupName
+
+    foreach ($resource in $resources) {
+        Write-Host "Removing tag 'tag1' from resource $($resource.Name)"
+
+        # Remove the specified tag from the resource
+        $tags = $resource.Tags
+        if ($tags -and $tags.ContainsKey("tag1")) {
+            $tags.Remove("tag1")
+            $null = Set-AzResource -ResourceId $resource.ResourceId -Tag $tags -Force
+        }
+    }
+
+    # Remove the specified tag from the resource group
+    $rgTags = $resourceGroup.Tags
+    if ($rgTags -and $rgTags.ContainsKey("tag1")) {
+        $rgTags.Remove("tag1")
+        $null = Set-AzResourceGroup -ResourceGroupName $resourceGroup.ResourceGroupName -Tag $rgTags
+    }
+}
+
+# Disconnect from Azure
+Disconnect-AzAccount
