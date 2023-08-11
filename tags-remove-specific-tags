@@ -1,0 +1,11 @@
+# Get all resources with the tag "tag1"
+$resourcesWithTag = Get-AzResource | Where-Object { $_.Tags['tag1'] -ne $null }
+
+# Loop through the resources and remove the tag "tag1"
+foreach ($resource in $resourcesWithTag) {
+    # Remove the tag
+    $resource.Tags.Remove('tag1')
+    
+    # Update the resource with the new tags
+    Set-AzResource -ResourceId $resource.ResourceId -Tag $resource.Tags -Force
+}
