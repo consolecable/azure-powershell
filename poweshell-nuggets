@@ -1,0 +1,5 @@
+$variable = ""  # Replace this with your actual variable
+
+if ([string]::IsNullOrWhiteSpace($variable)) {
+    Write-Host "$variable is blank"
+}
