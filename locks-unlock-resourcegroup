@@ -1,0 +1,16 @@
+
+# Get a list of all resource groups in the subscription
+$resourceGroups = Get-AzResourceGroup
+
+# Loop through each resource group and remove any locks
+foreach ($resourceGroup in $resourceGroups) {
+    $locks = Get-AzResourceLock -ResourceGroupName $resourceGroup.ResourceGroupName
+
+    foreach ($lock in $locks) {
+        Remove-AzResourceLock -LockName $lock.LockName -ResourceGroupName $resourceGroup.ResourceGroupName -Force
+        Write-Host "Removed lock $($lock.LockId) from resource group $($resourceGroup.ResourceGroupName)"
+    }
+}
+
+# Disconnect from Azure
+Disconnect-AzAccount
