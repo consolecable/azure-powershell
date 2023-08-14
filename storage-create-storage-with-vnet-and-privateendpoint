@@ -1,0 +1,27 @@
+
+# Define Variables
+$resourceGroup = "MyResourceGroup"
+$location = "East US"
+$vnetName = "MyVnet"
+$subnetName = "MySubnet"
+$storageAccountName = "mystorageaccount"
+
+# Create a Resource Group
+New-AzResourceGroup -Name $resourceGroup -Location $location
+
+# Create a Virtual Network and Subnet
+$subnetConfig = New-AzVirtualNetworkSubnetConfig -Name $subnetName -AddressPrefix 192.168.1.0/24
+New-AzVirtualNetwork -Name $vnetName -ResourceGroupName $resourceGroup -Location $location -AddressPrefix 192.168.0.0/16 -Subnet $subnetConfig
+
+# Create a Storage Account
+New-AzStorageAccount -ResourceGroupName $resourceGroup -AccountName $storageAccountName -Location $location -SkuName Standard_LRS
+
+# Get the storage account
+$storageAccount = Get-AzStorageAccount -ResourceGroupName $resourceGroup -Name $storageAccountName
+
+# Get the virtual network
+$vnet = Get-AzVirtualNetwork -ResourceGroupName $resourceGroup -Name $vnetName
+
+# Create a Private Endpoint for the Storage Account
+$privateDnsInfo = New-AzPrivateDnsZoneConfig -Name "privatelink.blob.core.windows.net"
+$privateEndpoint = New-AzPrivateEndpoint -ResourceGroupName $resourceGroup -Location $location -Name "MyPrivateEndpoint" -Subnet $vnet.Subnets[0] -PrivateLinkServiceConnection $privateDnsInfo -ManualPrivateLinkServiceConnection $storageAccount.Id
