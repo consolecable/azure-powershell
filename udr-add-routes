@@ -1,0 +1,27 @@
+
+# Define the resource group and route table where the routes will be added
+$resourceGroupName = 'MyResourceGroup'
+$routeTableName = 'MyRouteTable'
+
+# Get the existing route table
+$routeTable = Get-AzRouteTable -ResourceGroupName $resourceGroupName -RouteTableName $routeTableName
+
+
+$routes = @(
+    @{ Name = 'Route1'; AddressPrefix = '10.0.1.0/24'; NextHopType = 'VirtualNetworkGateway'; NextHopIpAddress = '10.0.1.1' },
+    @{ Name = 'Route2'; AddressPrefix = '10.0.2.0/24'; NextHopType = 'VirtualAppliance'; NextHopIpAddress = '10.0.2.1' },
+    @{ Name = 'Route7'; AddressPrefix = '10.0.7.0/24'; NextHopType = 'VirtualNetworkGateway'; NextHopIpAddress = '10.0.7.1' }
+)
+
+
+foreach ($route in $routes) {
+    $routeConfig = New-AzRouteConfig -Name $route.Name -AddressPrefix $route.AddressPrefix -NextHopType $route.NextHopType -NextHopIpAddress $route.NextHopIpAddress
+    $routeTable | Add-AzRouteConfig -Route $routeConfig | Set-AzRouteTable
+}
+
+# Output the updated route table
+Get-AzRouteTable -ResourceGroupName $resourceGroupName -RouteTableName $routeTableName | Select-Object -ExpandProperty Routes
+
+Make sure to customize the Name, AddressPrefix, NextHopType, and NextHopIpAddress for each route according to your needs.
+
+Always test the script in a development or staging environment before running it in a production environment to make sure it functions as expected.
