@@ -1,0 +1,92 @@
+#Backsup all Azure resouces Local files and Azure Storage. 
+
+# Define your local backup location here
+$backupLocation = ".\"
+
+# Azure Storage Details
+$storageAccountName = "storageaccountname"
+$storageContainerName = "config-backups"
+$storageSAS = "?" #starts with a "?"
+
+
+$storageContext = New-AzStorageContext -StorageAccountName $storageAccountName -SasToken $storageSAS
+
+# Initialize log array
+$logArray = @()
+
+# Iterate through each tenant
+Get-AzTenant | ForEach-Object {
+    $tenantId = $_.Id
+    $tenantName = $_.Name
+
+    $logArray += "Processing tenant: $tenantName ($tenantId)"
+
+    # Setting the tenant context
+    Set-AzContext -TenantId $tenantId
+
+    # Iterate through each subscription in the tenant
+    Get-AzSubscription | ForEach-Object {
+        $subscriptionId = $_.Id
+        $dateTimeStamp = Get-Date -Format "yyyyMMddHHmmss"
+        $subscriptionName = "sub-$dateTimeStamp-$($_.Name)"
+        
+        $logArray += "  Processing subscription: $subscriptionName ($subscriptionId)"
+
+        # Setting the subscription context
+        Set-AzContext -SubscriptionId $subscriptionId
+
+        # Iterate through each resource group in the subscription
+        Get-AzResourceGroup | ForEach-Object {
+            $resourceGroupName = "RG-$($_.ResourceGroupName)"
+
+            $logArray += "    Processing resource group: $resourceGroupName"
+
+            # Iterate through each resource in the resource group
+            Get-AzResource -ResourceGroupName $_.ResourceGroupName | ForEach-Object {
+                $resourceName = $_.Name
+                $resourceType = $_.ResourceType
+
+                $logArray += "      Processing resource: $resourceName ($resourceType)"
+
+                # Fetch the resource's JSON config
+                $resourceConfig = Get-AzResource -ResourceGroupName $_.ResourceGroupName -Name $resourceName -ResourceType $resourceType -ExpandProperties
+
+                # Define directory & file paths for local storage
+                $directoryPath = "$backupLocation/$tenantName/$subscriptionName/$resourceGroupName"
+                
+                # Create directory if not exists
+                if (-not (Test-Path $directoryPath)) {
+                    New-Item -ItemType Directory -Force -Path $directoryPath
+                }
+
+                $filePath = "$directoryPath/$resourceName.json"
+                $blobPath = "$tenantName/$subscriptionName/$resourceGroupName/$resourceName.json"
+
+                # Save resource config to local file
+                $resourceConfig | ConvertTo-Json -Depth 10 | Out-File -Path $filePath -Encoding utf8
+
+                # Save resource config to Azure Blob Storage
+                Set-AzStorageBlobContent -File $filePath -Container $storageContainerName -Blob $blobPath -Context $storageContext
+
+                $logArray += "      Resource $resourceName backup completed."
+            }
+        }
+    }
+
+    # Ensure logs directory exists
+    $logsDirectoryPath = "$backupLocation/logs"
+    if (-not (Test-Path $logsDirectoryPath)) {
+        New-Item -ItemType Directory -Force -Path $logsDirectoryPath
+    }
+
+    # Save log for this tenant to local storage with a unique timestamp
+    $logContent = $logArray -join "`r`n"
+    $logLocalPath = "$logsDirectoryPath/$tenantName-$dateTimeStamp.txt"
+    $logContent | Out-File -Path $logLocalPath -Encoding utf8
+    $logBlobPath = "logs/$tenantName-$dateTimeStamp.txt"
+    Set-AzStorageBlobContent -File $logLocalPath -Container $storageContainerName -Blob $logBlobPath -Context $storageContext
+}
+
+Write-Output "Backup complete!"
+  
+#
