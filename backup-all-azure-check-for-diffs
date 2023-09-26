@@ -1,0 +1,75 @@
+#Checks for Diffs using Azure Storage MD5
+#File structure based on backup script
+
+# Azure Storage Details
+$storageAccountName = "yourStorageAccountName"
+$storageContainerName = "yourBlobContainerName"
+$storageSAS = "yourSASToken"
+$storageContext = New-AzStorageContext -StorageAccountName $storageAccountName -SasToken $storageSAS
+
+# Fetch the two latest backups in blob storage based on the prefix (assuming backup folders start with 'sub-')
+$latestBackups = Get-AzStorageBlob -Container $storageContainerName -Context $storageContext -Prefix 'sub-' | 
+                 Where-Object { $_.BlobType -eq 'Directory' } | 
+                 Sort-Object Name -Descending | 
+                 Select-Object -First 2
+
+if ($latestBackups.Count -lt 2) {
+    Write-Output "Less than two backups found in Azure Blob. Cannot compare."
+    exit
+}
+
+$currentBackupPrefix = $latestBackups[0].Name
+$previousBackupPrefix = $latestBackups[1].Name
+
+# Fetch all blobs for current and previous backups
+$currentBlobs = Get-AzStorageBlob -Container $storageContainerName -Context $storageContext -Prefix $currentBackupPrefix
+$previousBlobs = Get-AzStorageBlob -Container $storageContainerName -Context $storageContext -Prefix $previousBackupPrefix
+
+# Store file changes
+$changes = @()
+
+# Compare blobs
+$currentBlobs | ForEach-Object {
+    $currentBlobName = $_.Name
+    $matchingPreviousBlob = $previousBlobs | Where-Object { $_.Name -eq $currentBlobName }
+
+    if ($matchingPreviousBlob) {
+        $currentHash = $_.Properties.ContentMD5
+        $previousHash = $matchingPreviousBlob.Properties.ContentMD5
+
+        if ($currentHash -ne $previousHash) {
+            $changes += "Modified: $currentBlobName"
+        }
+    } else {
+        $changes += "Added: $currentBlobName"
+    }
+}
+
+$previousBlobs | ForEach-Object {
+    $previousBlobName = $_.Name
+    $matchingCurrentBlob = $currentBlobs | Where-Object { $_.Name -eq $previousBlobName }
+
+    if (-not $matchingCurrentBlob) {
+        $changes += "Deleted: $previousBlobName"
+    }
+}
+
+# Create a report and store it in Azure Blob Storage
+$dateTimeStamp = Get-Date -Format "yyyyMMddHHmmss"
+$reportBlobPath = "backup-changes-log/ChangesReport-$dateTimeStamp.txt"
+$changesReportTemp = [System.IO.Path]::GetTempFileName()
+$changes | Out-File -Path $changesReportTemp -Encoding utf8
+
+# Check if 'backup-changes-log' folder exists and create it if not
+$backupLogExists = Get-AzStorageBlob -Container $storageContainerName -Context $storageContext -Prefix 'backup-changes-log' -Blob 'placeholder' -ErrorAction SilentlyContinue
+if (-not $backupLogExists) {
+    $null = Set-AzStorageBlobContent -Container $storageContainerName -Context $storageContext -File $changesReportTemp -Blob 'backup-changes-log/placeholder'
+}
+
+# Upload the changes report to Azure Blob Storage
+Set-AzStorageBlobContent -Container $storageContainerName -Context $storageContext -File $changesReportTemp -Blob $reportBlobPath
+
+# Cleanup
+Remove-Item -Path $changesReportTemp -Force
+
+Write-Output "Changes report generated at Azure Blob path: $reportBlobPath"
