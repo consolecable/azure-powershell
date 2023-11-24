@@ -1,0 +1,26 @@
+# Define the path to the text file
+$userListPath = "C:\path\to\your\file.txt"
+
+# Read the user list from the file
+$userList = Get-Content -Path $userListPath
+
+# Connect to Azure AD
+Connect-AzureAD
+
+# Iterate over each user and disable the account
+foreach ($user in $userList) {
+    try {
+        # Get the user object
+        $userObject = Get-AzureADUser -ObjectId $user
+
+        # Disable the user account
+        Set-AzureADUser -ObjectId $userObject.ObjectId -AccountEnabled $false
+
+        Write-Host "Account disabled for user: $user"
+    } catch {
+        Write-Host "Failed to disable account for user: $user. Error: $_"
+    }
+}
+
+# Disconnect from Azure AD
+Disconnect-AzureAD
