@@ -1,0 +1,37 @@
+# Import Azure module
+Import-Module Az
+
+# Connect to Azure Account
+Connect-AzAccount
+
+# Path to the file containing the list of user accounts to remove
+$userListPath = "C:\path\to\your\file.txt"
+
+# Path for the log file
+$logFilePath = "C:\path\to\your\logfile.txt"
+
+# Function to write logs
+function Write-Log {
+    param([string]$Message)
+
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    "$timestamp - $Message" | Out-File -FilePath $logFilePath -Append
+}
+
+# Reading user accounts from the file
+$userAccounts = Get-Content $userListPath
+
+foreach ($user in $userAccounts) {
+    try {
+        # Removing Azure account
+        Remove-AzADUser -UserPrincipalName $user
+        $logMessage = "Removed Azure account for user: $user"
+        Write-Host $logMessage
+        Write-Log -Message $logMessage
+    }
+    catch {
+        $errorMessage = "Failed to remove Azure account for user: $user. Error: $_"
+        Write-Host $errorMessage
+        Write-Log -Message $errorMessage
+    }
+}
