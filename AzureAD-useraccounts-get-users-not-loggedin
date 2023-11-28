@@ -1,0 +1,24 @@
+# Import Azure AD module
+Import-Module AzureAD
+
+# Connect to Azure AD
+Connect-AzureAD
+
+# Retrieve all Azure AD users
+$users = Get-AzureADUser -All $true
+
+# Empty array to hold users who never logged in
+$usersNeverLoggedIn = @()
+
+foreach ($user in $users) {
+    # Check if the user has sign-in logs
+    $signInLogs = Get-AzureADAuditSignInLogs -Filter "userPrincipalName eq '$($user.UserPrincipalName)'" -Top 1
+
+    if ($signInLogs -eq $null -or $signInLogs.Count -eq 0) {
+        # User never logged in
+        $usersNeverLoggedIn += $user
+    }
+}
+
+# Output the list of users
+$usersNeverLoggedIn | Select UserPrincipalName, DisplayName, ObjectId
