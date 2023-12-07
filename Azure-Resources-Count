@@ -1,0 +1,32 @@
+# Get all subscriptions in the tenant
+$subscriptions = Get-AzSubscription
+
+# Iterate through each subscription
+foreach ($subscription in $subscriptions) {
+    # Set the context to the subscription
+    Set-AzContext -SubscriptionId $subscription.Id
+
+    # Initialize hashtable for resource count by type
+    $resourceCountByType = @{}
+
+    # Get resources in the current subscription
+    $resources = Get-AzResource
+
+    # Iterate through resources and count by type
+    foreach ($resource in $resources) {
+        $type = $resource.ResourceType
+        if ($resourceCountByType.ContainsKey($type)) {
+            $resourceCountByType[$type] += 1
+        } else {
+            $resourceCountByType[$type] = 1
+        }
+    }
+
+    # Output the resource counts for the current subscription
+    Write-Host "Subscription ID: $($subscription.Id)"
+    Write-Host "Resource counts by type:"
+    foreach ($type in $resourceCountByType.Keys) {
+        Write-Host "$type : $($resourceCountByType[$type])"
+    }
+    Write-Host "-----------------------------------"
+}
