@@ -1,0 +1,28 @@
+Connect-AzAccount
+
+# Define the subscriptions to exclude
+$excludedSubscriptions = @('SubscriptionName1', 'SubscriptionName2')
+
+# Get all subscriptions
+$subscriptions = Get-AzSubscription | Where-Object { $_.Name -notin $excludedSubscriptions }
+
+# Prepare data for export
+$dataForExport = @()
+
+foreach ($sub in $subscriptions) {
+    # Set the current subscription context
+    Set-AzContext -SubscriptionId $sub.Id
+
+    # Get resource groups in the current subscription
+    $resourceGroups = Get-AzResourceGroup
+
+    foreach ($rg in $resourceGroups) {
+        $dataForExport += New-Object PSObject -Property @{
+            Subscription = $sub.Name
+            ResourceGroupName = $rg.ResourceGroupName
+        }
+    }
+}
+
+# Export data to CSV file
+$dataForExport | Export-Csv -Path "subscription_resourcegroups.csv" -NoTypeInformation
