@@ -1,0 +1,26 @@
+csv example
+
+UserPrincipalName,DisplayName,MailNickname,PasswordProfile
+john.doe@example.com,John Doe,johndoe,"{Password:'userPassword', ForceChangePasswordNextLogin: $true}"
+jane.doe@example.com,Jane Doe,janedoe,"{Password:'userPassword', ForceChangePasswordNextLogin: $true}"
+
+Connect-MgGraph -Scopes "User.ReadWrite.All"
+
+
+# Path to the CSV file
+$csvPath = "C:\path\to\your\file.csv"
+
+# Read the CSV file
+$users = Import-Csv -Path $csvPath
+
+# Loop through each user in the CSV
+foreach ($user in $users) {
+    # Create a new user in Azure AD
+    $newUser = New-AzureADUser -AccountEnabled $true `
+                               -DisplayName $user.DisplayName `
+                               -PasswordProfile $user.PasswordProfile `
+                               -MailNickname $user.MailNickname `
+                               -UserPrincipalName $user.UserPrincipalName
+                               
+    Write-Output "Created new user: $($newUser.DisplayName)"
+}
