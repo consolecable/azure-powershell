@@ -1,0 +1,36 @@
+# Login to Azure (if not already logged in)
+Connect-AzAccount
+
+# Get all Azure subscriptions
+$subscriptions = Get-AzSubscription
+
+# Prepare to collect results
+$results = @()
+
+foreach ($sub in $subscriptions) {
+    # Select the subscription
+    Set-AzContext -SubscriptionId $sub.Id
+
+    # Get all virtual networks in the current subscription
+    $vnets = Get-AzVirtualNetwork
+
+    foreach ($vnet in $vnets) {
+        foreach ($subnet in $vnet.Subnets) {
+            # Collect details about each subnet
+            $result = [PSCustomObject]@{
+                SubscriptionName = $sub.Name
+                SubscriptionId   = $sub.Id
+                VNetName         = $vnet.Name
+                SubnetName       = $subnet.Name
+                AddressPrefix    = $subnet.AddressPrefix
+            }
+            $results += $result
+        }
+    }
+}
+
+# Display results in a formatted table
+$results | Format-Table SubscriptionName, SubscriptionId, VNetName, SubnetName, AddressPrefix
+
+# Optionally, export the results to a CSV file
+$results | Export-Csv -Path "AzureSubnetsIPRanges.csv" -NoTypeInformation
