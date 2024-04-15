@@ -1,0 +1,40 @@
+# Ensure you are logged in to Azure
+# Connect-AzAccount
+
+# Set the context to the Azure subscription containing Azure Sentinel
+# Set-AzContext -Subscription "Your Subscription Name or ID"
+
+# Define the workspace and resource group that contains Azure Sentinel
+$resourceGroupName = "YourResourceGroupName"
+$workspaceName = "YourWorkspaceName"
+
+# Retrieve all available alert rule templates in Azure Sentinel
+$templates = Get-AzSentinelAlertRuleTemplate -ResourceGroupName $resourceGroupName -WorkspaceName $workspaceName
+
+# Filter templates to only those with High severity
+$highSeverityTemplates = $templates | Where-Object { $_.Severity -eq "High" }
+
+# Loop through each High severity template and create an alert rule based on the template
+foreach ($template in $highSeverityTemplates) {
+    # Define the new rule parameters
+    $ruleParams = @{
+        DisplayName = $template.DisplayName
+        Description = $template.Description
+        Severity = $template.Severity
+        Enabled = $true
+        Query = $template.Query
+        QueryFrequency = $template.QueryFrequency
+        QueryPeriod = $template.QueryPeriod
+        TriggerOperator = $template.TriggerOperator
+        TriggerThreshold = $template.TriggerThreshold
+        SuppressionDuration = $template.SuppressionDuration
+        SuppressionEnabled = $template.SuppressionEnabled
+        Tactics = $template.Tactics
+    }
+
+    # Create the new alert rule
+    New-AzSentinelAlertRule -ResourceGroupName $resourceGroupName -WorkspaceName $workspaceName -AlertRule $ruleParams
+}
+
+# Output the created alert rules for verification
+Get-AzSentinelAlertRule -ResourceGroupName $resourceGroupName -WorkspaceName $workspaceName | Where-Object { $_.Severity -eq "High" } | Format-Table Name, DisplayName, Enabled
