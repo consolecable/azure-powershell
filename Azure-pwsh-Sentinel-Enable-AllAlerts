@@ -1,0 +1,23 @@
+# Login to Azure (if not already logged in)
+# Connect-AzAccount
+
+# Select your Azure subscription containing Azure Sentinel
+# Set-AzContext -Subscription "Your Subscription Name or ID"
+
+# Specify the workspace and resource group that contains Azure Sentinel
+$resourceGroupName = "YourResourceGroupName"
+$workspaceName = "YourWorkspaceName"
+
+# Get all Azure Sentinel alert rules
+$alertRules = Get-AzSentinelAlertRule -ResourceGroupName $resourceGroupName -WorkspaceName $workspaceName
+
+# Enable each alert rule
+foreach ($rule in $alertRules) {
+    # Check if the rule is disabled; if so, enable it
+    if ($rule.Enabled -eq $false) {
+        Set-AzSentinelAlertRule -ResourceGroupName $resourceGroupName -WorkspaceName $workspaceName -RuleId $rule.Name -Enabled $true
+    }
+}
+
+# Output the status of alert rules
+Get-AzSentinelAlertRule -ResourceGroupName $resourceGroupName -WorkspaceName $workspaceName | Select-Object Name, Enabled
