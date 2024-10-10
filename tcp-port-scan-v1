@@ -1,0 +1,84 @@
+# Function to scan a single TCP port
+function Test-Port {
+    param (
+        [string]$targethostname,
+        [int]$port
+    )
+    try {
+        # Create a TCP connection
+        $tcpConnection = New-Object System.Net.Sockets.TcpClient
+        $tcpConnection.Connect($targethostname, $port)
+        
+        # If the connection succeeds, the port is open
+        Write-Host "Port $port is open on $targethostname"
+        $tcpConnection.Close()
+    } catch {
+        # If connection fails, the port is closed
+        Write-Host "Port $port is closed on $targethostname"
+    }
+}
+
+# Function to scan all TCP ports on a single host
+function Scan-AllTcpPorts {
+    param (
+        [string]$targethostname,
+        [int]$startPort = 1,
+        [int]$endPort = 65535
+    )
+    
+    # Loop through all ports
+    for ($port = $startPort; $port -le $endPort; $port++) {
+        Test-Port -hostname $targethostname -port $port
+    }
+}
+
+# Function to convert CIDR to IP range
+function ConvertFrom-CIDR {
+    param (
+        [string]$CIDR
+    )
+    
+    # Split the CIDR into IP and prefix length
+    $CIDRsplit = $CIDR.Split('/')
+    $ip = [System.Net.IPAddress]::Parse($CIDRsplit[0])
+    $prefixLength = [int]$CIDRsplit[1]
+
+    # Convert the IP address to a 32-bit integer
+    $ipBytes = $ip.GetAddressBytes()
+    [Array]::Reverse($ipBytes)
+    $ipInt = [BitConverter]::ToUInt32($ipBytes, 0)
+
+    # Calculate the subnet mask and range
+    $subnetMask = -bnot ([math]::pow(2, 32 - $prefixLength) - 1)
+    $networkAddress = $ipInt -band $subnetMask
+    $broadcastAddress = $networkAddress + -bnot $subnetMask
+
+    # Return all IPs in the range
+    for ($i = $networkAddress + 1; $i -lt $broadcastAddress; $i++) {
+        $bytes = [BitConverter]::GetBytes($i)
+        [Array]::Reverse($bytes)
+        [System.Net.IPAddress]::new($bytes)
+    }
+}
+
+# Function to scan all TCP ports for a given CIDR range
+function Scan-Network {
+    param (
+        [string]$networkCIDR,
+        [int]$startPort = 1,
+        [int]$endPort = 65535
+    )
+    
+    # Get all IPs in the CIDR range
+    $targethosts = ConvertFrom-CIDR -CIDR $networkCIDR
+    
+    # Loop through each host in the network and scan all ports
+    foreach ($targethost in $targethosts) {
+        Write-Host "`nScanning host: $targethost"
+        Scan-AllTcpPorts -hostname $targethost -startPort $startPort -endPort $endPort
+    }
+}
+
+# Usage
+$networkCIDR = "192.168.1.0/24"  # Replace with the target network in CIDR format
+Scan-Network -networkCIDR $networkCIDR
