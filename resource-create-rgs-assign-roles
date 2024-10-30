@@ -1,0 +1,37 @@
+# Variables
+$SubscriptionName = "YourSubscriptionName"  # The name of the Azure subscription
+$ResourceGroupNames = @("ResourceGroup1", "ResourceGroup2", "ResourceGroup3")  # List of resource groups to create
+$Location = "EastUS"  # Replace with your preferred Azure region
+$AzureADGroupName = "YourADGroupName"  # The name of the Azure AD Group to assign the role to
+$RoleDefinitionName = "Contributor"  # Specify the role definition, e.g., "Contributor", "Reader", etc.
+
+# Connect to Azure (if not already connected)
+Connect-AzAccount
+
+# Select the subscription based on the subscription name
+$Subscription = Get-AzSubscription -SubscriptionName $SubscriptionName
+if ($Subscription -eq $null) {
+    Write-Host "The specified subscription does not exist." -ForegroundColor Red
+    return
+} else {
+    Set-AzContext -SubscriptionId $Subscription.Id
+}
+
+# Get the Azure AD Group
+$AzureADGroup = Get-AzADGroup -DisplayName $AzureADGroupName
+if ($AzureADGroup -eq $null) {
+    Write-Host "The specified Azure AD Group does not exist." -ForegroundColor Red
+} else {
+    # Loop through each resource group in the list
+    foreach ($ResourceGroupName in $ResourceGroupNames) {
+        # Create Resource Group
+        New-AzResourceGroup -Name $ResourceGroupName -Location $Location -ErrorAction SilentlyContinue
+        
+        # Assign specified Role to the Group for the Resource Group
+        New-AzRoleAssignment -ObjectId $AzureADGroup.Id `
+                             -RoleDefinitionName $RoleDefinitionName `
+                             -Scope "/subscriptions/$($Subscription.Id)/resourceGroups/$ResourceGroupName"
+        
+        Write-Host "$RoleDefinitionName role assigned to the group '$AzureADGroupName' for resource group '$ResourceGroupName'."
+    }
+}
