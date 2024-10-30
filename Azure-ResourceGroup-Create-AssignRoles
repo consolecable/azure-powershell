@@ -1,7 +1,7 @@
 # Variables
 $SubscriptionName = "YourSubscriptionName"  # The name of the Azure subscription
 $ResourceGroupNames = @("ResourceGroup1", "ResourceGroup2", "ResourceGroup3")  # List of resource groups to create
-$Location = "North Europe"  # Replace with your preferred Azure region
+$Location = "EastUS"  # Replace with your preferred Azure region
 $AzureADGroupName = "YourADGroupName"  # The name of the Azure AD Group to assign the role to
 $RoleDefinitionName = "Contributor"  # Specify the role definition, e.g., "Contributor", "Reader", etc.
 
@@ -21,17 +21,34 @@ if ($Subscription -eq $null) {
 $AzureADGroup = Get-AzADGroup -DisplayName $AzureADGroupName
 if ($AzureADGroup -eq $null) {
     Write-Host "The specified Azure AD Group does not exist." -ForegroundColor Red
-} else {
-    # Loop through each resource group in the list
-    foreach ($ResourceGroupName in $ResourceGroupNames) {
-        # Create Resource Group
-        New-AzResourceGroup -Name $ResourceGroupName -Location $Location -ErrorAction SilentlyContinue
-        
-        # Assign specified Role to the Group for the Resource Group
-        New-AzRoleAssignment -ObjectId $AzureADGroup.Id `
-                             -RoleDefinitionName $RoleDefinitionName `
-                             -Scope "/subscriptions/$($Subscription.Id)/resourceGroups/$ResourceGroupName"
-        
-        Write-Host "$RoleDefinitionName role assigned to the group '$AzureADGroupName' for resource group '$ResourceGroupName'."
-    }
+    return
+}
+
+# Display the changes for verification
+Write-Host "The following changes will be made:" -ForegroundColor Yellow
+Write-Host "Subscription: $SubscriptionName"
+Write-Host "Role to assign: $RoleDefinitionName"
+Write-Host "Azure AD Group: $AzureADGroupName"
+Write-Host "Location: $Location"
+Write-Host "Resource Groups to create and assign role:"
+$ResourceGroupNames | ForEach-Object { Write-Host " - $_" }
+
+# Confirm before proceeding
+$confirmation = Read-Host "Press Y or y to continue, any other key to cancel"
+if ($confirmation -ne "Y" -and $confirmation -ne "y") {
+    Write-Host "Operation cancelled." -ForegroundColor Red
+    return
+}
+
+# Loop through each resource group in the list and make changes
+foreach ($ResourceGroupName in $ResourceGroupNames) {
+    # Create Resource Group
+    New-AzResourceGroup -Name $ResourceGroupName -Location $Location -ErrorAction SilentlyContinue
+    
+    # Assign specified Role to the Group for the Resource Group
+    New-AzRoleAssignment -ObjectId $AzureADGroup.Id `
+                         -RoleDefinitionName $RoleDefinitionName `
+                         -Scope "/subscriptions/$($Subscription.Id)/resourceGroups/$ResourceGroupName"
+    
+    Write-Host "$RoleDefinitionName role assigned to the group '$AzureADGroupName' for resource group '$ResourceGroupName'."
 }
