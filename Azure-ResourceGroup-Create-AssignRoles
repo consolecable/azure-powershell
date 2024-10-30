@@ -1,7 +1,7 @@
 # Variables
 $SubscriptionName = "YourSubscriptionName"  # The name of the Azure subscription
 $ResourceGroupNames = @("ResourceGroup1", "ResourceGroup2", "ResourceGroup3")  # List of resource groups to create
-$Location = "EastUS"  # Replace with your preferred Azure region
+$Location = "North Europe"  # Replace with your preferred Azure region
 $AzureADGroupName = "YourADGroupName"  # The name of the Azure AD Group to assign the role to
 $RoleDefinitionName = "Contributor"  # Specify the role definition, e.g., "Contributor", "Reader", etc.
 
