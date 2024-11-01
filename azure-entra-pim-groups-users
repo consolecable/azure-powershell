@@ -1,0 +1,24 @@
+Install-Module Microsoft.Graph -Scope CurrentUser
+Import-Module Microsoft.Graph
+Connect-MgGraph -Scopes "Directory.Read.All", "Group.Read.All"
+
+
+$user = Get-MgUser -UserId "UserPrincipalName"
+
+
+# Get roles assigned to the user via Privileged Identity Management (PIM)
+$pimRoles = Get-MgUserAssignedRole -UserId $user.Id | Where-Object { $_.IsPrivilegedRole }
+
+# Display PIM roles/groups
+$pimRoles | ForEach-Object {
+    $roleName = $_.RoleDefinition.DisplayName
+    $groupId = $_.ScopeId # Group ID associated with the PIM role
+    $group = Get-MgGroup -GroupId $groupId
+    [PSCustomObject]@{
+        RoleName = $roleName
+        GroupName = $group.DisplayName
+        GroupId = $group.Id
+    }
+}
+
+
