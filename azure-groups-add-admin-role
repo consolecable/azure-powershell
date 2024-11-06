@@ -1,0 +1,21 @@
+# Connect to your Azure account
+Connect-AzAccount
+
+# Define variables
+$subscriptionId = 'your-subscription-id' # Replace with your Azure subscription ID
+$resourceGroups = @('ResourceGroup1', 'ResourceGroup2', 'ResourceGroup3') # List of Resource Groups
+$roleName = 'Contributor' # Specify the role (e.g., 'Owner', 'Reader', etc.)
+$groupId = 'your-group-object-id' # Replace with the Object ID of your Azure AD group
+
+# Set the Azure context to the specified subscription
+Set-AzContext -SubscriptionId $subscriptionId
+
+# Loop through each resource group and add the group to the specified role
+foreach ($rg in $resourceGroups) {
+    $scope = "/subscriptions/$subscriptionId/resourceGroups/$rg"
+
+    # Assign the role to the group
+    New-AzRoleAssignment -ObjectId $groupId -RoleDefinitionName $roleName -Scope $scope
+}
+
+Write-Host "Role assignment complete."
