@@ -1,0 +1,22 @@
+# Variables
+$resourceGroupName = "YourResourceGroupName"
+$routeTableName = "YourRouteTableName"
+$outputCsvPath = "path/to/output.csv"  # Specify the output CSV file path
+
+# Get the route table
+$routeTable = Get-AzRouteTable -ResourceGroupName $resourceGroupName -Name $routeTableName
+
+# Extract routes and format into objects for CSV export
+$routes = $routeTable.Routes | ForEach-Object {
+    [PSCustomObject]@{
+        Name             = $_.Name
+        AddressPrefix    = $_.AddressPrefix
+        NextHopType      = $_.NextHopType
+        NextHopIpAddress = if ($_.NextHopIpAddress) { $_.NextHopIpAddress } else { "" }
+    }
+}
+
+# Export the routes to a CSV file
+$routes | Export-Csv -Path $outputCsvPath -NoTypeInformation -Force
+
+Write-Host "Routes exported to $outputCsvPath"
