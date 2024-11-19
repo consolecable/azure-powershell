@@ -1,0 +1,36 @@
+###################################################
+#CSV format example
+#Name,AddressPrefix,NextHopType,NextHopIpAddress
+#Route1,10.0.0.0/16,VirtualAppliance,10.0.0.4
+#Route2,192.168.1.0/24,VnetLocal,
+#Route3,0.0.0.0/0,Internet,
+
+
+
+#################################
+
+
+# Variables
+$resourceGroupName = "YourResourceGroupName"
+$routeTableName = "YourRouteTableName"
+$location = "YourLocation"
+$csvPath = "path/to/routes.csv"  # Specify the path to your CSV file
+
+# Create a new route table if needed (skip this step if using an existing table)
+$routeTable = New-AzRouteTable -ResourceGroupName $resourceGroupName -Location $location -Name $routeTableName
+
+# Read routes from the CSV file
+$routes = Import-Csv -Path $csvPath
+
+# Loop through each row in the CSV and add the routes
+foreach ($route in $routes) {
+    Add-AzRouteConfig -Name $route.Name `
+                      -AddressPrefix $route.AddressPrefix `
+                      -NextHopType $route.NextHopType `
+                      -NextHopIpAddress $route.NextHopIpAddress `
+                      -RouteTable $routeTable
+}
+
+# Save the changes to the route table
+$routeTable | Set-AzRouteTable
+
