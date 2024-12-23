@@ -1,0 +1,45 @@
+# Import the Az module (make sure it's installed)
+Import-Module Az
+
+# List of subscriptions to process
+$subscriptions = @(
+    "SubscriptionID1",
+    "SubscriptionID2",
+    "SubscriptionID3"
+)
+
+# Specify the name of the tag to remove
+$tagToRemove = "TagNameToRemove"
+
+# Loop through each subscription
+foreach ($subscriptionId in $subscriptions) {
+    try {
+        # Set the current subscription context
+        Set-AzContext -SubscriptionId $subscriptionId
+
+        Write-Host "Processing Subscription: $subscriptionId"
+
+        # Get all resources in the subscription
+        $resources = Get-AzResource
+
+        foreach ($resource in $resources) {
+            # Check if the resource has the tag to remove
+            if ($resource.Tags -and $resource.Tags.ContainsKey($tagToRemove)) {
+                # Remove the tag
+                $newTags = $resource.Tags
+                $newTags.Remove($tagToRemove)
+
+                # Update the resource with the new tags
+                Set-AzResource -ResourceId $resource.ResourceId -Tag $newTags -Force
+
+                Write-Host "Removed tag '$tagToRemove' from resource: $($resource.Name)" -ForegroundColor Green
+            } else {
+                Write-Host "Tag '$tagToRemove' not found on resource: $($resource.Name)" -ForegroundColor Yellow
+            }
+        }
+    } catch {
+        Write-Host "An error occurred processing subscription $subscriptionId: $_" -ForegroundColor Red
+    }
+}
+
+Write-Host "Script execution completed." -ForegroundColor Cyan
