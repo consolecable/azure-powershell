@@ -35,4 +35,19 @@ foreach ($subscriptionName in $subscriptionNames) {
             if ($resource.Tags -and $resource.Tags.ContainsKey($tagToRemove)) {
                 # Remove the tag
                 $newTags = $resource.Tags
-                $newTags.Remove
+                $newTags.Remove($tagToRemove)
+
+                # Update the resource with the new tags
+                Set-AzResource -ResourceId $resource.ResourceId -Tag $newTags -Force
+
+                Write-Host "Removed tag '$tagToRemove' from resource: $($resource.Name)" -ForegroundColor Green
+            } else {
+                Write-Host "Tag '$tagToRemove' not found on resource: $($resource.Name)" -ForegroundColor Yellow
+            }
+        }
+    } catch {
+        Write-Host "An error occurred processing subscription '$subscriptionName': $_" -ForegroundColor Red
+    }
+}
+
+Write-Host "Script execution completed." -ForegroundColor Cyan
