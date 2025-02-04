@@ -1,0 +1,50 @@
+# Define the subnet range
+$subnet = "192.168.1."   # Change this to your subnet
+$startIP = 196            # Starting IP in the subnet
+$endIP = 197        # Ending IP in the subnet
+$startPort = 70          # Starting Port
+$endPort = 445       # Ending Port
+$timeout = 100          # Timeout in milliseconds (adjust as needed)
+$logFile = "PortScanReport.txt"  # Output file
+
+# Create or clear the log file
+Set-Content -Path $logFile -Value "Port Scan Report - $(Get-Date)`r`n"
+
+# Function to check if a port is open
+function Test-Port {
+    param (
+        [string]$ip,
+        [int]$port
+    )
+
+    $tcpClient = New-Object System.Net.Sockets.TcpClient
+    $tcpClient.SendTimeout = $timeout
+    $tcpClient.ReceiveTimeout = $timeout
+
+    Write-Host "Scanning: $ip`: Port $port" -ForegroundColor DarkGray
+
+    try {
+        $tcpClient.Connect($ip, $port)
+        if ($tcpClient.Connected) {
+            $result = "Open: $ip`: Port $port"
+            Write-Host $result -ForegroundColor Green
+            Add-Content -Path $logFile -Value $result
+            $tcpClient.Close()
+        }
+    } catch {
+        # Do nothing (port is closed)
+    }
+}
+
+# Scan the subnet
+foreach ($i in $startIP..$endIP) {
+    $currentIP = "$subnet.$i"
+    Write-Host "`nScanning IP: $currentIP" -ForegroundColor Yellow
+    Add-Content -Path $logFile -Value "`r`nScanning IP: $currentIP"
+
+    foreach ($port in $startPort..$endPort) {
+        Test-Port -ip $currentIP -port $port
+    }
+}
+
+Write-Host "`nScan complete! Results saved in $logFile" -ForegroundColor Cyan
