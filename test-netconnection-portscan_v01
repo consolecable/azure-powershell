@@ -1,7 +1,7 @@
 # Define parameters
-$subnet = "192.168.1"   # Change this to your subnet
-$startIP = 100            # Starting IP in the subnet
-$endIP = 101            # Ending IP in the subnet
+$subnet = "216.58.212"   # Change this to your subnet
+$startIP = 163            # Starting IP in the subnet
+$endIP = 163            # Ending IP in the subnet
 $startPort = 400        # Starting Port
 $endPort = 450        # Ending Port
 $timeout = 100          # Timeout in milliseconds (adjust as needed)
@@ -84,3 +84,5 @@ if ($failedPorts.Count -gt 0) {
 }
 
 Write-Host "`nScan complete! Results saved in $logFile" -ForegroundColor Cyan
+
+#End
