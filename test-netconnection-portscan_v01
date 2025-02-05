@@ -1,9 +1,9 @@
 # Define parameters
-$subnet = "192.168.1"   # Change this to your subnet
-$startIP = 1            # Starting IP in the subnet
-$endIP = 254            # Ending IP in the subnet
-$startPort = 1          # Starting Port
-$endPort = 65535        # Ending Port
+$subnet = "216.58.212"   # Change this to your subnet
+$startIP = 163            # Starting IP in the subnet
+$endIP = 163            # Ending IP in the subnet
+$startPort = 400        # Starting Port
+$endPort = 450        # Ending Port
 $timeout = 100          # Timeout in milliseconds (adjust as needed)
 $maxThreads = 50        # Adjust thread count for parallelism
 
