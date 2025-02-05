@@ -9,10 +9,10 @@ $maxThreads = 50        # Adjust thread count for parallelism
 
 # Generate unique log filename with Date-Time-Network
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$logFile = "PortScanReport-$subnet-$timestamp.txt"
+$logFile = ".\PortScanReport-$subnet-$timestamp.txt"  # Save to Temp Folder
 
 # Create log file with a header
-Set-Content -Path $logFile -Value "Port Scan Report - $(Get-Date)`r`nSubnet: $subnet`r`n"
+Out-File -FilePath $logFile -Encoding utf8 -Force -InputObject "Port Scan Report - $(Get-Date)`r`nSubnet: $subnet`r`n"
 
 # Use runspaces for parallel execution
 $runspacePool = [runspacefactory]::CreateRunspacePool(1, $maxThreads)
@@ -23,7 +23,7 @@ $jobs = @()
 foreach ($i in $startIP..$endIP) {
     $currentIP = "$subnet.$i"
     Write-Host "`nScanning IP: $currentIP" -ForegroundColor Yellow
-    Add-Content -Path $logFile -Value "`r`nScanning IP: $currentIP"
+    "`r`nScanning IP: $currentIP" | Out-File -FilePath $logFile -Append -Encoding utf8
 
     foreach ($port in $startPort..$endPort) {
         $scriptBlock = {
@@ -40,7 +40,7 @@ foreach ($i in $startIP..$endIP) {
                 if ($tcpClient.Connected) {
                     $result = "Open: $ip`: Port $port"
                     Write-Host $result -ForegroundColor Green
-                    Add-Content -Path $logFile -Value $result
+                    $result | Out-File -FilePath $logFile -Append -Encoding utf8
                     $tcpClient.Close()
                 }
             } catch {
@@ -66,3 +66,6 @@ $runspacePool.Close()
 $runspacePool.Dispose()
 
 Write-Host "`nScan complete! Results saved in $logFile" -ForegroundColor Cyan
+Write-Host "Log file: $logFile" -ForegroundColor Blue
+
+#End
