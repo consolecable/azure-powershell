@@ -1,50 +1,86 @@
-# Define the subnet range
-$subnet = "192.168.1."   # Change this to your subnet
-$startIP = 196            # Starting IP in the subnet
-$endIP = 197        # Ending IP in the subnet
-$startPort = 70          # Starting Port
-$endPort = 445       # Ending Port
+# Define parameters
+$subnet = "216.58.212"   # Change this to your subnet
+$startIP = 163            # Starting IP in the subnet
+$endIP = 163            # Ending IP in the subnet
+$startPort = 400        # Starting Port
+$endPort = 450        # Ending Port
 $timeout = 100          # Timeout in milliseconds (adjust as needed)
-$logFile = "PortScanReport.txt"  # Output file
+$maxThreads = 50        # Adjust thread count for parallelism
 
-# Create or clear the log file
-Set-Content -Path $logFile -Value "Port Scan Report - $(Get-Date)`r`n"
+# Generate unique log filename with Date-Time-Network
+$timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$logFile = "PortScanReport-$subnet-$timestamp.txt"
 
-# Function to check if a port is open
-function Test-Port {
-    param (
-        [string]$ip,
-        [int]$port
-    )
+# Create log file with a header
+Set-Content -Path $logFile -Value "Port Scan Report - $(Get-Date)`r`nSubnet: $subnet`r`n"
 
-    $tcpClient = New-Object System.Net.Sockets.TcpClient
-    $tcpClient.SendTimeout = $timeout
-    $tcpClient.ReceiveTimeout = $timeout
+# Use runspaces for parallel execution
+$runspacePool = [runspacefactory]::CreateRunspacePool(1, $maxThreads)
+$runspacePool.Open()
+$jobs = @()
+$failedPorts = @()
 
-    Write-Host "Scanning: $ip`: Port $port" -ForegroundColor DarkGray
-
-    try {
-        $tcpClient.Connect($ip, $port)
-        if ($tcpClient.Connected) {
-            $result = "Open: $ip`: Port $port"
-            Write-Host $result -ForegroundColor Green
-            Add-Content -Path $logFile -Value $result
-            $tcpClient.Close()
-        }
-    } catch {
-        # Do nothing (port is closed)
-    }
-}
-
-# Scan the subnet
+# Function to scan a port in parallel
 foreach ($i in $startIP..$endIP) {
     $currentIP = "$subnet.$i"
     Write-Host "`nScanning IP: $currentIP" -ForegroundColor Yellow
     Add-Content -Path $logFile -Value "`r`nScanning IP: $currentIP"
 
     foreach ($port in $startPort..$endPort) {
-        Test-Port -ip $currentIP -port $port
+        $scriptBlock = {
+            param ($ip, $port, $timeout, $logFile)
+
+            Write-Host "Scanning: $ip`: Port $port" -ForegroundColor DarkGray
+
+            $tcpClient = New-Object System.Net.Sockets.TcpClient
+            $tcpClient.SendTimeout = $timeout
+            $tcpClient.ReceiveTimeout = $timeout
+            $portStatus = "Closed"
+
+            try {
+                $tcpClient.Connect($ip, $port)
+                if ($tcpClient.Connected) {
+                    $portStatus = "Open"
+                    $result = "Open: $ip`: Port $port"
+                    Write-Host $result -ForegroundColor Green
+                    Add-Content -Path $logFile -Value $result
+                    $tcpClient.Close()
+                }
+            } catch {
+                # Capture closed ports for later logging
+                $portStatus = "Closed"
+            }
+
+            # Return result to the job
+            return @{ IP = $ip; Port = $port; Status = $portStatus }
+        }
+
+        # Create and queue the runspace job
+        $runspace = [powershell]::Create().AddScript($scriptBlock).AddArgument($currentIP).AddArgument($port).AddArgument($timeout).AddArgument($logFile)
+        $runspace.RunspacePool = $runspacePool
+        $jobs += @{ Pipe = $runspace; Status = $runspace.BeginInvoke() }
     }
+}
+
+# Monitor and cleanup jobs
+Write-Host "`nWaiting for tasks to complete..." -ForegroundColor Cyan
+foreach ($job in $jobs) {
+    $output = $job.Pipe.EndInvoke($job.Status)
+    $job.Pipe.Dispose()
+    
+    # Collect closed ports for final logging
+    if ($output.Status -eq "Closed") {
+        $failedPorts += "$($output.IP): Port $($output.Port) - Closed"
+    }
+}
+
+$runspacePool.Close()
+$runspacePool.Dispose()
+
+# Append closed ports to the log file
+if ($failedPorts.Count -gt 0) {
+    Add-Content -Path $logFile -Value "`r`nClosed Ports:`r`n"
+    $failedPorts | ForEach-Object { Add-Content -Path $logFile -Value $_ }
 }
 
 Write-Host "`nScan complete! Results saved in $logFile" -ForegroundColor Cyan
