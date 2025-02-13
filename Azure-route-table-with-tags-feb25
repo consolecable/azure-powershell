@@ -1,0 +1,57 @@
+# Define variables
+$SubscriptionName = "<Your-Subscription-Name>"  # Replace with your Azure subscription name
+$ResourceGroup = "<Your-Resource-Group>"        # Replace with your Azure resource group
+$RouteTableName = "<Your-Route-Table-Name>"     # Replace with your desired route table name
+$Location = "EastUS"                            # Change this to your desired Azure region
+
+# Define 8 custom tags
+$Tags = @{
+    "Environment"  = "Production"
+    "Department"   = "IT"
+    "Project"      = "NetworkUpgrade"
+    "Owner"        = "AdminTeam"
+    "CostCenter"   = "12345"
+    "Compliance"   = "ISO27001"
+    "Priority"     = "High"
+    "ManagedBy"    = "Automation"
+}
+
+# Define route configurations
+$Routes = @(
+    @{ Name = "rfc1918-10"; AddressPrefix = "10.0.0.0/8"; NextHopType = "VirtualAppliance"; NextHopIpAddress = "10.0.0.1" },
+    @{ Name = "rfc1918-172.16"; AddressPrefix = "172.16.0.0/12"; NextHopType = "VirtualAppliance"; NextHopIpAddress = "10.0.0.1" },
+    @{ Name = "rfc1918-192.168"; AddressPrefix = "192.168.0.0/16"; NextHopType = "VirtualAppliance"; NextHopIpAddress = "10.0.0.1" },
+    @{ Name = "default"; AddressPrefix = "0.0.0.0/0"; NextHopType = "VirtualAppliance"; NextHopIpAddress = "10.0.0.4" }
+)
+
+# Connect to Azure (if not already logged in)
+Write-Output "Logging in to Azure..."
+Connect-AzAccount | Out-Null
+
+# Set Azure context using Subscription Name
+Write-Output "Setting Azure context to Subscription: '$SubscriptionName'"
+$Subscription = Get-AzSubscription -SubscriptionName $SubscriptionName
+if ($null -eq $Subscription) {
+    Write-Error "Subscription '$SubscriptionName' not found. Please check the name and try again."
+    exit
+}
+Set-AzContext -SubscriptionName $SubscriptionName | Out-Null
+
+# Create the route table with tags
+Write-Output "Creating the route table '$RouteTableName' in resource group '$ResourceGroup'..."
+$RouteTable = New-AzRouteTable -Name $RouteTableName -ResourceGroupName $ResourceGroup -Location $Location -DisableBgpRoutePropagation -Tag $Tags -Force
+
+# Add routes to the route table
+foreach ($Route in $Routes) {
+    Write-Output "Adding route: $($Route.Name) with destination $($Route.AddressPrefix) -> Next Hop $($Route.NextHopIpAddress)"
+    Add-AzRouteConfig -Name $Route.Name -RouteTable $RouteTable -AddressPrefix $Route.AddressPrefix -NextHopType $Route.NextHopType -NextHopIpAddress $Route.NextHopIpAddress | Out-Null
+}
+
+# Save the updated route table
+Set-AzRouteTable -RouteTable $RouteTable
+
+Write-Output "Route table '$RouteTableName' created with 4 routes and 8 tags. BGP route propagation disabled."
+
+Get-AzRouteTable -name $Routetablename
+
+#
